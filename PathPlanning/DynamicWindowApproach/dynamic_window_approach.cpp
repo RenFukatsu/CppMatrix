@@ -86,7 +86,7 @@ int main()
     // obstacle {{x(m), y(m)}, ...}
     std::vector<Coordinates> ob = {
         {-1.0, -1.0},
-        {0.0, 0.0},
+        {0.0, 2.0},
         {4.0, 2.0},
         {5.0, 4.0},
         {5.0, 5.0},
@@ -101,12 +101,23 @@ int main()
     Config config;
     std::vector<RobotState> traj = {x};
 
-    for(int i=0; i<1; i++){ // あとで1000に直す
+    for(int i=0; i<1000; i++){ // あとで1000に直す
         std::vector<RobotState> ltraj;
         std::tie(u, ltraj) = dwa_control(x, u, config, goal, ob);
 
-        std::cout << "aa" << std::endl;
+        x = motion(x, u, config.dt);
+
+        traj.emplace_back(x);
+
+        // check goal
+        if(sqrt(pow(x.x - goal.x , 2) + pow(x.y - goal.y , 2)) <= config.robot_radius){
+            std::cout << "Goal!" << std::endl;
+            break;
+        }
+
     }
+
+    std::cout << "Done" << std::endl;
 
     
     return 0;
@@ -156,7 +167,6 @@ std::vector<RobotState> calc_trajectory(RobotState xinit, double v, double y, Co
     double time = 0.0;
 
     while(time <= config.predict_time){
-        std::cout<<1<<std::endl;
 
         Speeds u = {v, y};
         x = motion(x, u, config.dt);
@@ -178,8 +188,7 @@ std::tuple<Speeds, std::vector<RobotState>> calc_final_input(RobotState x, Speed
 
     // evalucate all trajectory with sampled input in dynamic window
     for(double v = dw[0]; v < dw[1]; v += config.v_reso){
-        for(double y = dw[2]; y < dw[3]; config.yawrate_reso){
-            std::cout<<2<<std::endl;
+        for(double y = dw[2]; y < dw[3]; y += config.yawrate_reso){
             std::vector<RobotState> traj =calc_trajectory(xinit, v, y, config);
 
             // calc cost
@@ -198,7 +207,7 @@ std::tuple<Speeds, std::vector<RobotState>> calc_final_input(RobotState x, Speed
             }
         }
     } 
-
+    
     return std::forward_as_tuple(min_u, best_traj);
 }
 
@@ -210,7 +219,6 @@ double calc_obstacle_cost(std::vector<RobotState> traj, std::vector<Coordinates>
 
     for(int ii=0; ii<traj.size(); ii += skip_n){
         for(int i=0; i<ob.size(); i++){
-            std::cout<<3<<std::endl;
             double ox = ob[i].x;
             double oy = ob[i].y;
             double dx = traj[ii].x - ox;
