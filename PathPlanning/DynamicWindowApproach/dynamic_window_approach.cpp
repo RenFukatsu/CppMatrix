@@ -8,6 +8,7 @@ Mobile robot motion planning sample with Dynamic Window Approach
 #include <math.h>
 #include <vector>
 #include <tuple>
+#include <time.h>
 
 class Config
 {
@@ -101,7 +102,9 @@ int main()
     Config config;
     std::vector<RobotState> traj = {x};
 
-    for(int i=0; i<1000; i++){ // あとで1000に直す
+    clock_t start = clock();
+
+    for(int i=0; i<1000; i++){
         std::vector<RobotState> ltraj;
         std::tie(u, ltraj) = dwa_control(x, u, config, goal, ob);
 
@@ -116,6 +119,10 @@ int main()
         }
 
     }
+
+    clock_t end = clock();
+
+    std::cout << "time : " << (double)(end - start) / CLOCKS_PER_SEC << "sec." << std::endl;
 
     std::cout << "Done" << std::endl;
 
